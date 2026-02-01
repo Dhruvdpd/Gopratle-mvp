@@ -6,7 +6,6 @@ import { Select } from '@/components/Select';
 import { Textarea } from '@/components/Textarea';
 import { Checkbox } from '@/components/Checkbox';
 import { Button } from '@/components/Button';
-import { useState } from 'react';
 
 interface Step3CrewProps {
   defaultValues: Partial<CrewDetailsFormData>;
@@ -56,37 +55,41 @@ const skillsList = [
 ];
 
 export default function Step3CrewDetails({ defaultValues, onNext, onBack }: Step3CrewProps) {
-  const [selectedRoles, setSelectedRoles] = useState<string[]>(defaultValues.roles || []);
-  const [selectedSkills, setSelectedSkills] = useState<string[]>(defaultValues.skillsRequired || []);
-
   const {
     register,
     handleSubmit,
     control,
+    setValue,
+    watch,
     formState: { errors },
   } = useForm<CrewDetailsFormData>({
     resolver: zodResolver(crewDetailsSchema),
     defaultValues: {
       ...defaultValues,
-      roles: selectedRoles,
-      skillsRequired: selectedSkills,
+      roles: defaultValues.roles || [],
+      skillsRequired: defaultValues.skillsRequired || [],
     },
   });
 
+  const selectedRoles = watch('roles') || [];
+  const selectedSkills = watch('skillsRequired') || [];
+
   const toggleRole = (role: string) => {
-    setSelectedRoles((prev) =>
-      prev.includes(role) ? prev.filter((r) => r !== role) : [...prev, role]
-    );
+    const newRoles = selectedRoles.includes(role)
+      ? selectedRoles.filter((r) => r !== role)
+      : [...selectedRoles, role];
+    setValue('roles', newRoles, { shouldValidate: true });
   };
 
   const toggleSkill = (skill: string) => {
-    setSelectedSkills((prev) =>
-      prev.includes(skill) ? prev.filter((s) => s !== skill) : [...prev, skill]
-    );
+    const newSkills = selectedSkills.includes(skill)
+      ? selectedSkills.filter((s) => s !== skill)
+      : [...selectedSkills, skill];
+    setValue('skillsRequired', newSkills, { shouldValidate: true });
   };
 
   const onSubmit = (data: CrewDetailsFormData) => {
-    onNext({ ...data, roles: selectedRoles, skillsRequired: selectedSkills });
+    onNext(data);
   };
 
   return (
@@ -107,17 +110,11 @@ export default function Step3CrewDetails({ defaultValues, onNext, onBack }: Step
           </label>
           <div className="space-y-3 bg-ivory border border-champagne p-5">
             {rolesList.map((role) => (
-              <Controller
+              <Checkbox
                 key={role}
-                name="roles"
-                control={control}
-                render={() => (
-                  <Checkbox
-                    label={role}
-                    checked={selectedRoles.includes(role)}
-                    onChange={() => toggleRole(role)}
-                  />
-                )}
+                label={role}
+                checked={selectedRoles.includes(role)}
+                onChange={() => toggleRole(role)}
               />
             ))}
           </div>
@@ -148,17 +145,11 @@ export default function Step3CrewDetails({ defaultValues, onNext, onBack }: Step
           </label>
           <div className="space-y-3 bg-ivory border border-champagne p-5">
             {skillsList.map((skill) => (
-              <Controller
+              <Checkbox
                 key={skill}
-                name="skillsRequired"
-                control={control}
-                render={() => (
-                  <Checkbox
-                    label={skill}
-                    checked={selectedSkills.includes(skill)}
-                    onChange={() => toggleSkill(skill)}
-                  />
-                )}
+                label={skill}
+                checked={selectedSkills.includes(skill)}
+                onChange={() => toggleSkill(skill)}
               />
             ))}
           </div>

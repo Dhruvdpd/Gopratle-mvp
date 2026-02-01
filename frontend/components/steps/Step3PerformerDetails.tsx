@@ -6,7 +6,6 @@ import { Select } from '@/components/Select';
 import { Textarea } from '@/components/Textarea';
 import { Checkbox } from '@/components/Checkbox';
 import { Button } from '@/components/Button';
-import { useState } from 'react';
 
 interface Step3PerformerProps {
   defaultValues: Partial<PerformerDetailsFormData>;
@@ -40,29 +39,32 @@ const equipmentList = [
 ];
 
 export default function Step3PerformerDetails({ defaultValues, onNext, onBack }: Step3PerformerProps) {
-  const [selectedEquipment, setSelectedEquipment] = useState<string[]>(defaultValues.equipmentNeeded || []);
-
   const {
     register,
     handleSubmit,
     control,
+    setValue,
+    watch,
     formState: { errors },
   } = useForm<PerformerDetailsFormData>({
     resolver: zodResolver(performerDetailsSchema),
     defaultValues: {
       ...defaultValues,
-      equipmentNeeded: selectedEquipment,
+      equipmentNeeded: defaultValues.equipmentNeeded || [],
     },
   });
 
+  const selectedEquipment = watch('equipmentNeeded') || [];
+
   const toggleEquipment = (equipment: string) => {
-    setSelectedEquipment((prev) =>
-      prev.includes(equipment) ? prev.filter((e) => e !== equipment) : [...prev, equipment]
-    );
+    const newEquipment = selectedEquipment.includes(equipment)
+      ? selectedEquipment.filter((e) => e !== equipment)
+      : [...selectedEquipment, equipment];
+    setValue('equipmentNeeded', newEquipment, { shouldValidate: true });
   };
 
   const onSubmit = (data: PerformerDetailsFormData) => {
-    onNext({ ...data, equipmentNeeded: selectedEquipment });
+    onNext(data);
   };
 
   return (
@@ -111,17 +113,11 @@ export default function Step3PerformerDetails({ defaultValues, onNext, onBack }:
           </label>
           <div className="space-y-3 bg-ivory border border-champagne p-5">
             {equipmentList.map((equipment) => (
-              <Controller
+              <Checkbox
                 key={equipment}
-                name="equipmentNeeded"
-                control={control}
-                render={() => (
-                  <Checkbox
-                    label={equipment}
-                    checked={selectedEquipment.includes(equipment)}
-                    onChange={() => toggleEquipment(equipment)}
-                  />
-                )}
+                label={equipment}
+                checked={selectedEquipment.includes(equipment)}
+                onChange={() => toggleEquipment(equipment)}
               />
             ))}
           </div>
