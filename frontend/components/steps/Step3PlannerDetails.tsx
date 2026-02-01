@@ -1,4 +1,4 @@
-import { useForm, Controller } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { plannerDetailsSchema, PlannerDetailsFormData } from '@/lib/schemas';
 import { Input } from '@/components/Input';
@@ -6,7 +6,7 @@ import { Select } from '@/components/Select';
 import { Textarea } from '@/components/Textarea';
 import { Checkbox } from '@/components/Checkbox';
 import { Button } from '@/components/Button';
-import { useState } from 'react';
+import { useEffect } from 'react';
 
 interface Step3PlannerProps {
   defaultValues: Partial<PlannerDetailsFormData>;
@@ -47,29 +47,45 @@ const servicesList = [
 ];
 
 export default function Step3PlannerDetails({ defaultValues, onNext, onBack }: Step3PlannerProps) {
-  const [selectedServices, setSelectedServices] = useState<string[]>(defaultValues.services || []);
-
   const {
     register,
     handleSubmit,
-    control,
+    setValue,
+    watch,
+    trigger,
     formState: { errors },
   } = useForm<PlannerDetailsFormData>({
     resolver: zodResolver(plannerDetailsSchema),
     defaultValues: {
-      ...defaultValues,
-      services: selectedServices,
+      experienceYears: defaultValues.experienceYears || '',
+      specialization: defaultValues.specialization || '',
+      budget: defaultValues.budget || '',
+      guestCount: defaultValues.guestCount || '',
+      services: defaultValues.services || [],
+      additionalNotes: defaultValues.additionalNotes || '',
     },
   });
 
+  // Register the services field
+  useEffect(() => {
+    register('services');
+  }, [register]);
+
+  const selectedServices = watch('services') || [];
+
   const toggleService = (service: string) => {
-    setSelectedServices((prev) =>
-      prev.includes(service) ? prev.filter((s) => s !== service) : [...prev, service]
-    );
+    const newServices = selectedServices.includes(service)
+      ? selectedServices.filter((s) => s !== service)
+      : [...selectedServices, service];
+    
+    setValue('services', newServices);
+    // Trigger validation after a short delay to ensure state is updated
+    setTimeout(() => trigger('services'), 0);
   };
 
   const onSubmit = (data: PlannerDetailsFormData) => {
-    onNext({ ...data, services: selectedServices });
+    console.log('Submitting planner data:', data);
+    onNext(data);
   };
 
   return (
@@ -118,17 +134,11 @@ export default function Step3PlannerDetails({ defaultValues, onNext, onBack }: S
           </label>
           <div className="space-y-3 bg-ivory border border-champagne p-5">
             {servicesList.map((service) => (
-              <Controller
+              <Checkbox
                 key={service}
-                name="services"
-                control={control}
-                render={() => (
-                  <Checkbox
-                    label={service}
-                    checked={selectedServices.includes(service)}
-                    onChange={() => toggleService(service)}
-                  />
-                )}
+                label={service}
+                checked={selectedServices.includes(service)}
+                onChange={() => toggleService(service)}
               />
             ))}
           </div>
